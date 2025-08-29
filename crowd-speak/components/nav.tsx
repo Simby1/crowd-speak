@@ -8,7 +8,8 @@ export function Nav() {
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/polls">Polls</Link>
           <Link href="/polls/new">New Poll</Link>
-          <Link href="/auth/sign-in">Sign in</Link>
+          <Link href="/login">Sign in</Link>
+          <Link href="/register">Register</Link>
         </nav>
       </div>
     </header>
