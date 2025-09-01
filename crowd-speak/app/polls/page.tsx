@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Notice from "@/components/ui/notice";
+import DeletePollButton from "@/components/polls/DeletePollButton";
 
 async function deletePollAction(formData: FormData) {
   "use server";
@@ -30,25 +31,37 @@ export default async function PollsListPage({ searchParams }: { searchParams?: {
     .limit(20);
 
   return (
-    <main className="container mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-semibold mb-6">Polls</h1>
+    <main className="container mx-auto max-w-4xl px-6 py-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-100 mb-2">Polls</h1>
+        <p className="text-gray-400">Create and manage your polls</p>
+      </div>
       {searchParams?.success === "created" && <Notice message="Poll created successfully." />}
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         {(polls || []).map((p) => (
-          <Card key={p.id}>
+          <Card key={p.id} className="group hover:shadow-[0_0_25px_rgba(0,255,255,0.4)] transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-base">{p.question}</CardTitle>
+              <CardTitle className="text-lg group-hover:text-cyan-400 transition-colors duration-300">
+                {p.question}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3">
-                <Link className="underline text-sm" href={`/polls/${p.id}`}>View</Link>
+              <div className="flex items-center gap-4">
+                <Link 
+                  className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-200" 
+                  href={`/polls/${p.id}`}
+                >
+                  View
+                </Link>
                 {user?.id === p.author_id && (
                   <>
-                    <Link className="underline text-sm" href={`/polls/${p.id}/edit`}>Edit</Link>
-                    <form action={deletePollAction}>
-                      <input type="hidden" name="poll_id" value={p.id} />
-                      <button className="text-sm underline text-red-600" type="submit">Delete</button>
-                    </form>
+                    <Link 
+                      className="text-gray-400 hover:text-gray-300 font-medium transition-colors duration-200" 
+                      href={`/polls/${p.id}/edit`}
+                    >
+                      Edit
+                    </Link>
+                    <DeletePollButton pollId={p.id} deletePollAction={deletePollAction} />
                   </>
                 )}
               </div>
@@ -56,7 +69,10 @@ export default async function PollsListPage({ searchParams }: { searchParams?: {
           </Card>
         ))}
         {(!polls || polls.length === 0) && (
-          <p className="text-sm text-muted-foreground">No polls yet.</p>
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-lg">No polls yet.</p>
+            <p className="text-gray-500 text-sm mt-2">Create your first poll to get started.</p>
+          </div>
         )}
       </div>
     </main>
