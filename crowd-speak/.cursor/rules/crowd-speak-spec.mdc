@@ -17,6 +17,10 @@ Adhere strictly to the rules, patterns, and conventions outlined in this documen
 - Server-First: Prioritize Server Components for data fetching and Server Actions for data mutations to keep client-side JavaScript minimal.
 - Adherence: Do not introduce new libraries or frameworks without explicit instruction.
 
+## Working directory for all commands
+
+- Always run commands from the 'crowd-speak/crowd-speak' subdirectory.
+
 ## Technology Stack
 
 - Framework: Next.js (App Router)

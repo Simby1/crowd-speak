@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Notice from "@/components/ui/notice";
 import DeletePollButton from "@/components/polls/DeletePollButton";
 
-async function deletePollAction(formData: FormData) {
+export async function deletePollAction(formData: FormData) {
   "use server";
   const pollId = String(formData.get("poll_id"));
   const supabase = await createServerSupabase();
