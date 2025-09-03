@@ -9,13 +9,28 @@ import NewPollOptions from "@/components/polls/NewPollOptions";
 
 async function createPollAction(formData: FormData) {
   "use server";
-  const question = String(formData.get("question") || "").trim();
-  const optionValues = formData.getAll("options[]").map((v) => String(v).trim()).filter((v) => v.length > 0);
-  const uniqueOptions = Array.from(new Set(optionValues));
-  if (!question || uniqueOptions.length < 2) {
-    redirect(`/polls/new?error=${encodeURIComponent("Enter a question and at least two options.")}`);
+
+  // Parse and validate input early
+  const rawQuestion = formData.get("question");
+  const question = typeof rawQuestion === "string" ? rawQuestion.trim() : "";
+
+  // Build unique, non-empty options while preserving order
+  const seen = new Set<string>();
+  const uniqueOptions: string[] = [];
+  for (const value of formData.getAll("options[]")) {
+    const option = String(value).trim();
+    if (option.length === 0) continue;
+    if (seen.has(option)) continue;
+    seen.add(option);
+    uniqueOptions.push(option);
   }
 
+  if (!question || uniqueOptions.length < 2) {
+    const msg = encodeURIComponent("Enter a question and at least two options.");
+    redirect(`/polls/new?error=${msg}`);
+  }
+
+  // Auth and DB actions
   const supabase = await createServerSupabase();
   const {
     data: { user },
@@ -32,13 +47,15 @@ async function createPollAction(formData: FormData) {
     .single();
 
   if (pollError || !poll) {
-    redirect(`/polls/new?error=${encodeURIComponent(pollError?.message || "Could not create poll.")}`);
+    const msg = encodeURIComponent(pollError?.message || "Could not create poll.");
+    redirect(`/polls/new?error=${msg}`);
   }
 
   const optionsPayload = uniqueOptions.map((label) => ({ poll_id: poll.id, label }));
   const { error: optionsError } = await supabase.from("poll_options").insert(optionsPayload);
   if (optionsError) {
-    redirect(`/polls/new?error=${encodeURIComponent(optionsError.message)}`);
+    const msg = encodeURIComponent(optionsError.message);
+    redirect(`/polls/new?error=${msg}`);
   }
 
   revalidatePath("/polls");
