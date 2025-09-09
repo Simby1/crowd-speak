@@ -15,10 +15,12 @@ import {
 
 interface DeletePollButtonProps {
   pollId: string;
-  deletePollAction: (formData: FormData) => Promise<void>;
+  user: any; // Accept user prop as expected
+  deletePollAction: (pollId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-export default function DeletePollButton({ pollId, deletePollAction }: DeletePollButtonProps) {
+export default function DeletePollButton({ pollId, user, deletePollAction }: DeletePollButtonProps) {
+  // You can use the user prop for any client-side checks if needed
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -36,10 +38,9 @@ export default function DeletePollButton({ pollId, deletePollAction }: DeletePol
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => {
-              const formData = new FormData();
-              formData.append("poll_id", pollId);
-              deletePollAction(formData);
+            onClick={async () => {
+              await deletePollAction(pollId);
+              // Handle redirect or UI update in parent or via hook
             }}
             className="bg-red-600 hover:bg-red-700 focus-visible:ring-red-500"
           >

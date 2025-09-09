@@ -5,18 +5,28 @@ import { redirect } from "next/navigation";
 import Notice from "@/components/ui/notice";
 import DeletePollButton from "@/components/polls/DeletePollButton";
 
-export async function deletePollAction(formData: FormData) {
+export async function deletePollAction(pollId: string) {
   "use server";
-  const pollId = String(formData.get("poll_id"));
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: "User not authenticated." };
+    }
+    const { error } = await supabase
+      .from("polls")
+      .delete()
+      .eq("id", pollId)
+      .eq("author_id", user.id);
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Unknown error." };
   }
-  await supabase.from("polls").delete().eq("id", pollId).eq("author_id", user.id);
-  redirect("/polls");
 }
 
 export default async function PollsListPage({ searchParams }: { searchParams?: { success?: string } }) {
@@ -61,7 +71,7 @@ export default async function PollsListPage({ searchParams }: { searchParams?: {
                     >
                       Edit
                     </Link>
-                    <DeletePollButton pollId={p.id} deletePollAction={deletePollAction} />
+                    <DeletePollButton pollId={p.id} user={user} deletePollAction={deletePollAction} />
                   </>
                 )}
               </div>
