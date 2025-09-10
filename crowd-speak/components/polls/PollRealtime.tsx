@@ -53,6 +53,8 @@ export default function PollRealtime({ poll, initialCounts, hasVoted }: PollReal
 
   async function voteAction(formData: FormData) {
     const optionId = String(formData.get("option_id"));
+    if (!optionId) return;
+
     const supabase = createClient();
     const {
       data: { user },
@@ -61,11 +63,26 @@ export default function PollRealtime({ poll, initialCounts, hasVoted }: PollReal
       // This should be handled by page-level protection, but as a fallback:
       return;
     }
-    // Delete existing vote
-    await supabase.from("votes").delete().eq("poll_id", poll.id).eq("voter_id", user.id);
-    // Insert new vote
-    await supabase.from("votes").insert({ poll_id: poll.id, option_id: optionId, voter_id: user.id });
+
+    // Atomic upsert (requires UNIQUE (poll_id, voter_id))
+    const { error } = await supabase
+      .from("votes")
+      .upsert(
+        { poll_id: poll.id, option_id: optionId, voter_id: user.id },
+        { onConflict: "poll_id,voter_id" }
+      );
+    if (error) {
+      console.error("Failed to record vote:", error);
+      return;
+    }
+
     setVoted(true);
+
+    // Optional: refresh counts immediately for snappier UX
+    try {
+      const res = await fetch(`/polls/${poll.id}/counts`);
+      setCounts(await res.json());
+    } catch {}
   }
 
   return (
@@ -75,7 +92,14 @@ export default function PollRealtime({ poll, initialCounts, hasVoted }: PollReal
       </CardHeader>
       <CardContent>
         {voted && <Notice message="Thank you for voting." />}
-        <form action={voteAction} className="space-y-4">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget as HTMLFormElement);
+            await voteAction(fd);
+          }}
+          className="space-y-4"
+        >
           <input type="hidden" name="poll_id" value={poll.id} />
           <div className="grid gap-2">
             {(poll.poll_options || []).map((opt) => (
